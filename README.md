@@ -14,8 +14,8 @@ import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions";
 import readline from "readline";
 
-const apiId = 123456;
-const apiHash = "123456abcdfg";
+const apiId = process.env.TELEGRAM_API_ID;
+const apiHash = process.env.TELEGRAM_API_HASH;
 const stringSession = new StringSession(""); // fill this later with the value from session.save()
 
 const rl = readline.createInterface({

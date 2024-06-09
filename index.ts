@@ -148,9 +148,11 @@ async function getStoryUrl() {
 			return;
 		}
 
+		const lastItem = items[items.length - 1];
+
 		return {
-			download: items[0].image_versions2.candidates?.[0]?.url,
-			id: items[0].id,
+			download: lastItem.image_versions2.candidates?.[0]?.url,
+			id: lastItem.id,
 		};
 	} catch (e) {
 		console.error(e);
