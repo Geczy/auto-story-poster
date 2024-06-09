@@ -48,7 +48,7 @@ const rl = readline.createInterface({
 })();
 ```
 
-3. IG_TOTP: Instagram Two-Factor secret code
+3. IG_TOTP: Instagram Two-Factor secret code. Optional if you have 2FA enabled. If you don't have 2FA enabled, you can skip this step
 
 ```
 # If your OTP auth url looks like: otpauth://totp/Username%3A%20my_username?secret=AWPODKASPODK123&digits=6&period=30
