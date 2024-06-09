@@ -51,8 +51,14 @@ await client.start({
 	onError: (err) => console.log(err),
 });
 
-function fakeSave(data: object, path: string) {
-	fs.writeFileSync(path, JSON.stringify(data));
+function fakeSave(data: object, filePath: string) {
+	const dir = path.dirname(filePath);
+
+	if (!fs.existsSync(dir)) {
+		fs.mkdirSync(dir, { recursive: true });
+	}
+
+	fs.writeFileSync(filePath, JSON.stringify(data));
 	return data;
 }
 
