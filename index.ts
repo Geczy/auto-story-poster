@@ -3,9 +3,15 @@ import * as path from "node:path";
 import axios from "axios";
 import bodyParser from "body-parser";
 import express from "express";
+import {
+	IgApiClient,
+	IgLoginRequiredError,
+	IgLoginTwoFactorRequiredError,
+} from "instagram-private-api";
 import { Api, TelegramClient } from "telegram";
 import { CustomFile } from "telegram/client/uploads";
 import { StringSession } from "telegram/sessions";
+import { TOTP } from "totp-generator";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -15,7 +21,9 @@ app.use(bodyParser.json());
 if (
 	!process.env.TELEGRAM_API_ID ||
 	!process.env.TELEGRAM_API_HASH ||
-	!process.env.TELEGRAM_STRING_SESSION
+	!process.env.TELEGRAM_STRING_SESSION ||
+	!process.env.IG_USERNAME ||
+	!process.env.IG_PASSWORD
 ) {
 	console.error("Please provide all the required environment variables.");
 	process.exit(1);
@@ -46,8 +54,104 @@ await client.start({
 	onError: (err) => console.log(err),
 });
 
-// Endpoint for healthcheck
+function fakeSave(data: object, path: string) {
+	fs.writeFileSync(path, JSON.stringify(data));
+	return data;
+}
 
+function fakeExists(path: string) {
+	return fs.existsSync(path);
+}
+
+function fakeLoad(path: string) {
+	if (fakeExists(path)) {
+		const data = fs.readFileSync(path, "utf8");
+		return JSON.parse(data);
+	}
+	return null;
+}
+
+const igStateFilePath = "./ig_state.json";
+const ig = new IgApiClient();
+
+async function loginToIg() {
+	if (!process.env.IG_USERNAME || !process.env.IG_PASSWORD) {
+		console.error("Please provide all the required environment variables.");
+		return;
+	}
+
+	ig.state.generateDevice(process.env.IG_USERNAME);
+
+	ig.request.end$.subscribe(async () => {
+		const serialized = await ig.state.serialize();
+		serialized.constants = undefined; // this deletes the version info, so you'll always use the version provided by the library
+		fakeSave(serialized, igStateFilePath);
+	});
+	if (fakeExists(igStateFilePath)) {
+		console.log("Found existing instagram state file, loading...");
+		await ig.state.deserialize(fakeLoad(igStateFilePath));
+	} else {
+		console.log("Manually logging in to Instagram");
+		try {
+			await ig.simulate.preLoginFlow();
+			await ig.account.login(process.env.IG_USERNAME, process.env.IG_PASSWORD);
+		} catch (err) {
+			if (err instanceof IgLoginTwoFactorRequiredError) {
+				if (!process.env.IG_TOTP) {
+					console.error(
+						"Please provide the TOTP secret in the environment variable IG_TOTP.",
+					);
+					return;
+				}
+
+				const { username, totp_two_factor_on, two_factor_identifier } =
+					err.response.body.two_factor_info;
+				const verificationMethod = totp_two_factor_on ? "0" : "1";
+				const code = TOTP.generate(process.env.IG_TOTP, { digits: 6 });
+				await ig.account.twoFactorLogin({
+					username,
+					verificationCode: code.otp,
+					twoFactorIdentifier: two_factor_identifier,
+					verificationMethod, // '1' = SMS (default), '0' = TOTP (google auth for example)
+					trustThisDevice: "1", // Can be omitted as '1' is used by default
+				});
+			}
+		} finally {
+			process.nextTick(async () => await ig.simulate.postLoginFlow());
+		}
+	}
+}
+
+async function getStoryUrl() {
+	try {
+		await ig.account.currentUser();
+	} catch (e) {
+		if (e instanceof IgLoginRequiredError) {
+			console.log("Not logged in to IG");
+			return;
+		}
+	}
+
+	if (!process.env.IG_USERNAME) {
+		console.error("Please provide the IG_USERNAME environment variable.");
+		return;
+	}
+
+	try {
+		const targetUser = await ig.user.searchExact(process.env.IG_USERNAME); // getting exact user by login
+		const items = await ig.feed.userStory(targetUser.pk).items();
+		if (items.length === 0) {
+			console.log("No stories found");
+			return;
+		}
+
+		return items[0].image_versions2.candidates?.[0]?.url;
+	} catch (e) {
+		console.error(e);
+	}
+}
+
+// Endpoint for healthcheck
 app.get("/", (req, res) => {
 	res.send("Server is running");
 });
@@ -91,6 +195,16 @@ async function downloadFile(url: string, filePath: string) {
 			}
 		});
 	});
+}
+
+async function getExistingTelegramStories() {
+	const stories = await client.invoke(
+		new Api.stories.GetPeerStories({ peer: "me" }),
+	);
+
+	// console.log(stories.stories.stories[0].toJSON().media);
+
+	return stories;
 }
 
 async function repostToTelegram(storyUrl: string) {
@@ -152,4 +266,8 @@ app.listen(port, () => {
 	console.log(`Server is running on port ${port}`);
 });
 
-// await repostToTelegram("https://i.imgur.com/mgeJEiO.png");
+// await loginToIg();
+// const url = await getStoryUrl();
+// if (url) {
+// 	await repostToTelegram(url);
+// }
