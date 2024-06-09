@@ -46,6 +46,12 @@ await client.start({
 	onError: (err) => console.log(err),
 });
 
+// Endpoint for healthcheck
+
+app.get("/", (req, res) => {
+	res.send("Server is running");
+});
+
 // Endpoint to handle Instagram Webhook
 app.post("/webhook", async (req, res) => {
 	const { body } = req;
