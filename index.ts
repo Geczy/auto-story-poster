@@ -15,6 +15,29 @@ import { TOTP } from "totp-generator";
 const app = express();
 const port = process.env.PORT || 3000;
 
+function fakeSave(data: object, filePath: string) {
+	const dir = path.dirname(filePath);
+
+	if (!fs.existsSync(dir)) {
+		fs.mkdirSync(dir, { recursive: true });
+	}
+
+	fs.writeFileSync(filePath, JSON.stringify(data));
+	return data;
+}
+
+function fakeExists(path: string) {
+	return fs.existsSync(path);
+}
+
+function fakeLoad(path: string) {
+	if (fakeExists(path)) {
+		const data = fs.readFileSync(path, "utf8");
+		return JSON.parse(data);
+	}
+	return null;
+}
+
 if (
 	!process.env.TELEGRAM_API_ID ||
 	!process.env.TELEGRAM_API_HASH ||
@@ -50,29 +73,6 @@ await client.start({
 	},
 	onError: (err) => console.log(err),
 });
-
-function fakeSave(data: object, filePath: string) {
-	const dir = path.dirname(filePath);
-
-	if (!fs.existsSync(dir)) {
-		fs.mkdirSync(dir, { recursive: true });
-	}
-
-	fs.writeFileSync(filePath, JSON.stringify(data));
-	return data;
-}
-
-function fakeExists(path: string) {
-	return fs.existsSync(path);
-}
-
-function fakeLoad(path: string) {
-	if (fakeExists(path)) {
-		const data = fs.readFileSync(path, "utf8");
-		return JSON.parse(data);
-	}
-	return null;
-}
 
 const igStateFilePath = "./data/ig_state.json";
 const ig = new IgApiClient();
