@@ -297,7 +297,19 @@ app.listen(port, () => {
 });
 
 await loginToIg();
-const igResponse = await getStoryUrl();
-if (igResponse) {
-	await repostToTelegram(igResponse);
+
+async function startPosting() {
+	const igResponse = await getStoryUrl();
+	if (igResponse) {
+		await repostToTelegram(igResponse);
+		// TODO: add more networks (snapchat, twitter, etc)
+	}
 }
+
+// on server start
+startPosting();
+
+// every 10 minutes check for new stories to post to tg
+setInterval(async () => {
+	await startPosting();
+}, 600000);
