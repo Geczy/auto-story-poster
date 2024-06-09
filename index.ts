@@ -159,24 +159,6 @@ app.get("/", (req, res) => {
 	res.send("Server is running");
 });
 
-// Endpoint to handle Instagram Webhook
-app.post("/webhook", async (req, res) => {
-	const { body } = req;
-
-	// Check if the webhook is for a new story
-	if (body?.entry?.[0].changes) {
-		const changes = body.entry[0].changes;
-		for (const change of changes) {
-			if (change.field === "story") {
-				const storyUrl = change.value.media_url;
-				await repostToTelegram(storyUrl);
-			}
-		}
-	}
-
-	res.sendStatus(200);
-});
-
 async function downloadFile(url: string, filePath: string) {
 	const response = await axios({
 		url,
