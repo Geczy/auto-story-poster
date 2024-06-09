@@ -145,7 +145,10 @@ async function getStoryUrl() {
 			return;
 		}
 
-		return items[0].image_versions2.candidates?.[0]?.url;
+		return {
+			download: items[0].image_versions2.candidates?.[0]?.url,
+			id: items[0].id,
+		};
 	} catch (e) {
 		console.error(e);
 	}
@@ -202,12 +205,37 @@ async function getExistingTelegramStories() {
 		new Api.stories.GetPeerStories({ peer: "me" }),
 	);
 
-	// console.log(stories.stories.stories[0].toJSON().media);
-
 	return stories;
 }
 
-async function repostToTelegram(storyUrl: string) {
+const postedStoriesFilePath = "./posted_stories.json";
+
+function savePostedStory(id: string) {
+	let postedStories = fakeLoad(postedStoriesFilePath);
+	if (!postedStories) {
+		postedStories = [];
+	}
+	postedStories.push(id);
+	fakeSave(postedStories, postedStoriesFilePath);
+}
+
+function isStoryPosted(id: string): boolean {
+	const postedStories = fakeLoad(postedStoriesFilePath);
+	if (!postedStories) {
+		return false;
+	}
+	return postedStories.includes(id);
+}
+
+async function repostToTelegram({
+	download,
+	id,
+}: { download: string; id: string }) {
+	if (isStoryPosted(id)) {
+		console.log("This story has already been posted to Telegram.");
+		return;
+	}
+
 	try {
 		const canSendStory = await client.invoke(
 			new Api.stories.CanSendStory({
@@ -221,8 +249,8 @@ async function repostToTelegram(storyUrl: string) {
 		}
 
 		const filePath = path.join(__dirname, "tempStory.jpg");
-		console.log(`Downloading story from URL: ${storyUrl}`);
-		await downloadFile(storyUrl, filePath);
+		console.log(`Downloading story from URL: ${download}`);
+		await downloadFile(download, filePath);
 		console.log(`File downloaded to: ${filePath}`);
 
 		const fileStats = fs.statSync(filePath);
@@ -256,6 +284,8 @@ async function repostToTelegram(storyUrl: string) {
 		fs.unlinkSync(filePath); // Clean up the temporary file
 		console.log("File deleted after sending.");
 
+		savePostedStory(id); // Save the story URL as posted
+
 		return story;
 	} catch (error) {
 		console.error("Error reposting to Telegram", error);
@@ -266,8 +296,8 @@ app.listen(port, () => {
 	console.log(`Server is running on port ${port}`);
 });
 
-// await loginToIg();
-// const url = await getStoryUrl();
-// if (url) {
-// 	await repostToTelegram(url);
-// }
+await loginToIg();
+const igResponse = await getStoryUrl();
+if (igResponse) {
+	await repostToTelegram(igResponse);
+}
