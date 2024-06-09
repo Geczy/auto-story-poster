@@ -1,5 +1,11 @@
 # auto-story-poster
 
+## Usage
+
+1. bun i && bun index.ts
+
+## Credentials
+
 1. TELEGRAM_API_ID and TELEGRAM_API_HASH are from https://my.telegram.org/apps
 2. TELEGRAM_STRING_SESSION:
 
