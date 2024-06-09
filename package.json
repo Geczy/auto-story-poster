@@ -1,27 +1,22 @@
 {
-  "name": "auto-poster",
-  "module": "index.ts",
-  "type": "module",
-  "devDependencies": {
-    "@biomejs/biome": "1.8.0",
-    "@types/body-parser": "^1.19.5",
-    "@types/bun": "latest",
-    "@types/express": "^4.17.21",
-    "@types/totp-generator": "^0.0.8"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "axios": "^1.7.2",
-    "body-parser": "^1.20.2",
-    "express": "^4.19.2",
-    "instagram-private-api": "^1.46.1",
-    "telegram": "^2.22.2",
-    "totp-generator": "^1.0.0"
-  },
-  "trustedDependencies": [
-    "@biomejs/biome",
-    "es5-ext"
-  ]
+	"name": "auto-poster",
+	"module": "index.ts",
+	"type": "module",
+	"devDependencies": {
+		"@biomejs/biome": "1.8.0",
+		"@types/bun": "latest",
+		"@types/express": "^4.17.21",
+		"@types/totp-generator": "^0.0.8"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"axios": "^1.7.2",
+		"express": "^4.19.2",
+		"instagram-private-api": "^1.46.1",
+		"telegram": "^2.22.2",
+		"totp-generator": "^1.0.0"
+	},
+	"trustedDependencies": ["@biomejs/biome", "es5-ext"]
 }

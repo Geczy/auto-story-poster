@@ -1,7 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import axios from "axios";
-import bodyParser from "body-parser";
 import express from "express";
 import {
 	IgApiClient,
@@ -15,8 +14,6 @@ import { TOTP } from "totp-generator";
 
 const app = express();
 const port = process.env.PORT || 3000;
-
-app.use(bodyParser.json());
 
 if (
 	!process.env.TELEGRAM_API_ID ||
@@ -71,7 +68,7 @@ function fakeLoad(path: string) {
 	return null;
 }
 
-const igStateFilePath = "./ig_state.json";
+const igStateFilePath = "./data/ig_state.json";
 const ig = new IgApiClient();
 
 async function loginToIg() {
@@ -190,7 +187,7 @@ async function getExistingTelegramStories() {
 	return stories;
 }
 
-const postedStoriesFilePath = "./posted_stories.json";
+const postedStoriesFilePath = "./data/posted_stories.json";
 
 function savePostedStory(id: string) {
 	let postedStories = fakeLoad(postedStoriesFilePath);
