@@ -16,3 +16,7 @@
 
   So save the secret in the .env file as IG_TOTP=AWPODKASPODK123
   ```
+
+If you're deploying with coolify or docker, save volume `/data/` to save your IG session and other data that shouldn't be ephemeral
+
+![CleanShot 2024-06-12 at 08 00 27@2x](https://github.com/Geczy/auto-story-poster/assets/1036968/ca4a4129-076e-4a45-817f-98da4dafc74f)
